@@ -1,169 +1,282 @@
-# Accelerated Gradient Lab
+# Accelerated Gradient Methods: Momentum, Nesterov, and When Theory Misbehaves
 
-A small, self-contained codebase for experimenting with **first-order optimization methods** and comparing their empirical convergence behavior on controlled objectives.
+This project implements and studies **first-order optimization methods with acceleration/momentum** on controlled test problems where you can see both:
 
-This repo focuses on clarity, reproducibility, and extensibility: you can add new objectives and methods without turning the project into a framework nobody asked for.
+- the **clean, textbook behavior** (strongly convex quadratics), and
+- the **messier, real behavior** (weak convexity / non-strong convexity, and piecewise-defined objectives).
 
-## What’s included
+Core methods included:
+- **Gradient Descent (GD)** with classic fixed stepsizes
+- **Heavy-Ball (HB)** momentum
+- **Nesterov’s Accelerated Gradient (NAG)**
+- Nesterov acceleration with the **general convex** schedule \(\beta_k = \frac{k-1}{k+2}\)
 
-### Methods
-- **Gradient Descent (GD)** with fixed step size
-- **Heavy-Ball (HB)** momentum method
-- **Nesterov Accelerated Gradient (NAG)** with:
-  - fixed momentum parameter **β** (typical tuned form for strongly convex settings)
-  - adaptive **βₖ = (k−1)/(k+2)** (standard convex-setting schedule)
-
-### Objectives
-- **Quadratic**
-  - \( f(x) = \tfrac{1}{2} x^\top A x + b^\top x \)
-  - controlled spectrum construction with eigenvalues in \([\mu, L]\)
-  - supports both strongly convex (\(\mu>0\)) and PSD/weakly convex (\(\mu=0\)) cases
-- **Piecewise 1D strongly convex** example
-  - smooth but not twice differentiable at kink points (useful for “theory vs practice” behavior)
-
-### Outputs
-The scripts generate plots in `figures/` (created automatically if missing).
+The repository produces a compact set of plots comparing convergence, iteration counts, and (when applicable) worst-case bounds.
 
 ---
 
 ## Install
 
-Create and activate a virtual environment:
-
 ```bash
 python -m venv .venv
 # Linux/Mac
 source .venv/bin/activate
-# Windows PowerShell
+# Windows (PowerShell)
 .venv\Scripts\Activate.ps1
-```
 
-Install dependencies:
-
-```bash
 pip install -r requirements.txt
 ```
 
-If you want an editable install (recommended while developing):
+---
 
+## Run
+
+### Notebook workflow
 ```bash
-pip install -e .
+jupyter lab
+```
+
+### Script workflow (recommended if you refactor)
+```bash
+python scripts/run_all.py
 ```
 
 ---
 
-## Run the demos / benchmarks
+## Main math formulas
 
-Run everything:
+### Gradient Descent (GD)
+For differentiable \(f:\mathbb{R}^n\to\mathbb{R}\),
+\[
+x_{k+1} = x_k - \alpha \nabla f(x_k).
+\]
 
-```bash
-python scripts/make_all.py
-```
+Two common fixed stepsizes for \(L\)-smooth, \(\mu\)-strongly convex objectives:
+\[
+\alpha=\frac{1}{L},
+\qquad
+\alpha=\frac{2}{L+\mu}.
+\]
 
-Or run individual scripts:
+### Heavy-Ball (HB)
+Momentum update:
+\[
+x_{k+1} = x_k - \alpha \nabla f(x_k) + \beta (x_k - x_{k-1}).
+\]
 
-### Quadratic benchmark + demos
+A tuned parameter choice (particularly meaningful for strongly convex quadratics):
+\[
+\alpha = \frac{4}{(\sqrt{L}+\sqrt{\mu})^2},
+\qquad
+\beta = \frac{\sqrt{L}-\sqrt{\mu}}{\sqrt{L}+\sqrt{\mu}}.
+\]
 
-```bash
-python scripts/run_quadratic_benchmark.py
-```
+### Nesterov’s Accelerated Gradient (NAG) — strongly convex tuning
+Momentum step:
+\[
+y_k = x_k + \beta(x_k - x_{k-1}),
+\qquad
+x_{k+1} = y_k - \alpha \nabla f(y_k).
+\]
+with:
+\[
+\alpha=\frac{1}{L},
+\qquad
+\beta = \frac{\sqrt{L}-\sqrt{\mu}}{\sqrt{L}+\sqrt{\mu}}.
+\]
 
-This script runs three cases:
+### Nesterov acceleration — general convex schedule
+When \(\mu=0\) (no strong convexity), a robust classic choice is:
+\[
+\beta_k = \frac{k-1}{k+2},
+\qquad
+y_k = x_k + \beta_k(x_k-x_{k-1}),
+\qquad
+x_{k+1} = y_k - \alpha \nabla f(y_k).
+\]
 
-1. **Strongly convex quadratic** (\(\mu>0\))  
-   - compares GD (two step sizes), HB tuned parameters, and tuned NAG  
-   - reports mean/std iteration counts over multiple random initializations  
-   - produces a semilog optimality-gap plot
-
-2. **PSD quadratic with linear term** (\(\mu=0\), typically unbounded below)  
-   - demonstrates practical divergence behavior  
-   - stops when the function value reaches a target threshold (e.g., `-2000`)
-
-3. **PSD quadratic with no linear term** (\(\mu=0,\ b=0\))  
-   - compares GD, “bad” NAG with fixed β=1, and convex-schedule NAG  
-   - includes reference curves (1/k and 1/k²) for visual comparison
-
-Expected figure outputs (filenames):
-- `figures/quadratic_strongly_convex_gaps.png`
-- `figures/quadratic_mu0_unbounded_values.png`
-- `figures/quadratic_mu0_b0_gaps.png`
-- `figures/quadratic_mu0_b0_rate_compare.png`
-
-### Piecewise 1D demo + quadratic-style worst-case bounds
-
-```bash
-python scripts/run_piecewise1d_demo.py
-```
-
-This script:
-- runs GD, NAG, HB from the same initial point
-- plots their function values
-- overlays **quadratic worst-case style bounds** computed using specified \((\mu, L)\) as a baseline comparison
-
-Expected figure outputs:
-- `figures/piecewise1d_values_vs_bounds_40.png`
-- `figures/piecewise1d_values_vs_bounds_10.png`
+### Optimality gap
+Many plots use the function-value gap:
+\[
+\mathrm{gap}_k := f(x_k) - f_*,
+\qquad
+f_* = \min_x f(x).
+\]
+Often displayed on a log scale, e.g. \(k \mapsto \log(\mathrm{gap}_k)\).
 
 ---
 
-## Run tests
+## Problem families
 
+### 1) Structured quadratic objectives (strongly convex)
+We study:
+\[
+f(x)=\frac{1}{2}x^\top A x + b^\top x,
+\]
+with a symmetric positive definite \(A\) constructed so:
+\[
+\mu \le \lambda_i(A) \le L,
+\qquad
+\kappa=\frac{L}{\mu}.
+\]
+
+Key quantities:
+\[
+\nabla f(x)=Ax+b,
+\qquad
+\nabla^2 f(x)=A,
+\qquad
+x_*=-A^{-1}b\ \ (\text{when }A\text{ is invertible}).
+\]
+
+### 2) Weakly convex / non-strongly convex regime (\(\mu=0\))
+Setting \(\mu=0\) produces objectives that may be:
+- ill-conditioned,
+- not strictly convex,
+- or even **unbounded below** (depending on \(b\) and the nullspace of \(A\)).
+
+This is used to highlight how “strongly convex-tuned” momentum parameters can become unstable or uninformative when the assumptions disappear.
+
+### 3) Piecewise-defined strongly convex 1D objective
+We also study a simple 1D piecewise function with strong convexity and Lipschitz gradients (but not globally \(C^2\)):
+
+\[
+f(x)=
+\begin{cases}
+25x^2, & x<1,\\
+x^2+48x-24, & 1\le x\le 2,\\
+25x^2-48x+72, & x>2.
+\end{cases}
+\]
+
+The derivative (where defined) is:
+\[
+f'(x)=
+\begin{cases}
+50x, & x<1,\\
+2x+48, & 1<x<2,\\
+50x-48, & x>2.
+\end{cases}
+\]
+
+This case is useful for comparing real trajectories with classic worst-case bounds that are exact for quadratics but conservative on “almost-quadratic” structure.
+
+---
+
+## Theory baselines referenced in plots (when applicable)
+
+For \(L\)-smooth, \(\mu\)-strongly convex objectives:
+
+- GD with \(\alpha=1/L\):
+\[
+f(x_T)-f_* \le \left(1-\frac{\mu}{L}\right)^T\,(f(x_0)-f_*).
+\]
+
+- NAG (strongly convex tuning):
+\[
+f(x_T)-f_* \le \left(1-\frac{1}{\sqrt{\kappa}}\right)^T
+\left[f(x_0)-f_*+\frac{\mu}{2}\|x_0-x_*\|_2^2\right].
+\]
+
+For general convex objectives (\(\mu=0\)), Nesterov’s schedule yields a rate on the order of:
+\[
+f(y_k)-f_* \le \frac{2L\|x_0-x_*\|_2^2}{k(k+1)}.
+\]
+
+---
+
+## Results (10 figures)
+
+Figures are expected in **`figures/`**. The links below assume that directory layout.
+
+1. **Method comparison on a strongly convex quadratic (log optimality gap)**  
+<p align="center">
+  <img src="figures/strongly_convex_log_gap.png" alt="Strongly convex log-gap comparison" width="520" />
+</p>
+
+2. **Monte Carlo summary: iterations to reach tolerance (strongly convex)**  
+<p align="center">
+  <img src="figures/strongly_convex_mc_iters.png" alt="Strongly convex Monte Carlo iteration counts" width="520" />
+</p>
+
+3. **Stepsize choice effect for GD (e.g., 1/L vs 2/(L+mu))**  
+<p align="center">
+  <img src="figures/gd_stepsize_comparison.png" alt="GD stepsize comparison" width="520" />
+</p>
+
+4. **Weakly convex / \(\mu=0\): objective value trajectories (may diverge/unbounded)**  
+<p align="center">
+  <img src="figures/mu0_objective_trajectories.png" alt="mu=0 trajectories" width="520" />
+</p>
+
+5. **\(\mu=0\), \(b=0\): GD vs naive accelerated parameters (log-gap)**  
+<p align="center">
+  <img src="figures/mu0_b0_gd_vs_naive_nag.png" alt="mu=0 b=0 GD vs naive NAG" width="520" />
+</p>
+
+6. **\(\mu=0\): accelerated method with \(\beta_k=(k-1)/(k+2)\) vs 1/k and 1/k^2 references**  
+<p align="center">
+  <img src="figures/mu0_convex_beta_schedule.png" alt="Convex beta schedule comparison" width="520" />
+</p>
+
+7. **Piecewise strongly convex function: method trajectories (full horizon)**  
+<p align="center">
+  <img src="figures/piecewise_full.png" alt="Piecewise full horizon" width="520" />
+</p>
+
+8. **Piecewise strongly convex function: zoomed early iterations**  
+<p align="center">
+  <img src="figures/piecewise_zoom.png" alt="Piecewise zoom" width="520" />
+</p>
+
+9. **Piecewise case: empirical curves vs worst-case quadratic-style upper bounds**  
+<p align="center">
+  <img src="figures/piecewise_vs_bounds.png" alt="Piecewise vs bounds" width="520" />
+</p>
+
+10. **Heavy-Ball spectral/block structure visualization (quadratic analysis)**  
+<p align="center">
+  <img src="figures/heavyball_block_structure.png" alt="Heavy-ball block structure" width="520" />
+</p>
+
+> Replace the filenames above with your actual outputs if they differ.
+
+---
+
+## Suggested repository layout
+
+```
+.
+├─ notebooks/
+│  └─ accelerated_methods.ipynb
+├─ src/
+│  ├─ methods.py          # GD, HB, NAG implementations
+│  ├─ problems.py         # quadratic + piecewise objectives, gradients
+│  └─ utils.py            # logging, plotting helpers
+├─ figures/
+│  └─ *.png
+├─ scripts/
+│  └─ run_all.py
+├─ requirements.txt
+└─ README.md
+```
+
+---
+
+## Tests (optional but recommended)
+
+If you refactor into a package, a minimal test suite is worth it:
+
+- gradient checks (finite differences for smooth parts)
+- monotonicity/descent sanity checks (where expected)
+- regression tests for plot generation
+
+Run:
 ```bash
 pytest -q
 ```
 
-The tests cover:
-- finite-difference gradient checks for both objectives (away from kink points for the piecewise function)
-- basic “GD decreases with safe step” sanity check
-- “Nesterov runs and improves” sanity check
-
 ---
 
-## Project structure
-
-```
-accelerated-gradient-lab/
-  scripts/          # reproducible runs that generate plots into figures/
-  src/aglab/        # library code (objectives, optimizers, plotting helpers)
-  tests/            # pytest test suite
-  figures/          # generated outputs (created automatically)
-```
-
----
-
-## Extending the project
-
-### Add a new objective
-Create `src/aglab/objectives/<name>.py` and implement at least:
-- `f(x)` returning a scalar (float or 0-d array)
-- `grad(x)` returning a vector
-
-Export it in `src/aglab/objectives/__init__.py`.
-
-### Add a new optimizer
-Create `src/aglab/optim/<name>.py` and follow the style of existing methods:
-- accept `f`, `grad`, `x0`, hyperparameters, `max_iter`, and a `stop` callback
-- return a `History` object with `xs`, `fvals`, and `n_iter`
-
-Export it in `src/aglab/optim/__init__.py`.
-
-### Add a new experiment script
-Create `scripts/<name>.py` that:
-- constructs an objective and one or more optimizers
-- saves plots into `figures/` using helpers in `src/aglab/plotting/`
-
----
-
-## Reproducibility
-
-- Deterministic randomness is set via `numpy` seeds in scripts.
-- Quadratic matrices are constructed with a controlled spectrum in \([\mu, L]\) using an orthonormal basis + diagonal eigenvalue assignment.
-- Scripts are designed to stop using explicit criteria (gap threshold, function-value threshold, or fixed iteration count for plots).
-
----
-
-## License and citation
-
-- License: MIT (add a `LICENSE` file if you want it explicit)
-- Citation metadata: see `CITATION.cff`
-
+## License
+MIT.
