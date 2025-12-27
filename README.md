@@ -173,8 +173,6 @@ f(y_k)-f_* \le \frac{2L\|x_0-x_*\|_2^2}{k(k+1)}.
 
 ## Results
 
-Figures are expected in **`figures/`**. The links below assume that directory layout.
-
 1. **Method comparison on a strongly convex quadratic (log optimality gap)**  
 <p align="center">
   <img src="figures/strongly_convex_log_gap.png" alt="Strongly convex log-gap comparison" width="520" />
