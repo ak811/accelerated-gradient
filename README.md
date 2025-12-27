@@ -225,26 +225,6 @@ f(y_k)-f_* \le \frac{2L\|x_0-x_*\|_2^2}{k(k+1)}.
 
 ---
 
-## Suggested repository layout
-
-```
-.
-├─ notebooks/
-│  └─ accelerated_methods.ipynb
-├─ src/
-│  ├─ methods.py          # GD, HB, NAG implementations
-│  ├─ problems.py         # quadratic + piecewise objectives, gradients
-│  └─ utils.py            # logging, plotting helpers
-├─ figures/
-│  └─ *.png
-├─ scripts/
-│  └─ run_all.py
-├─ requirements.txt
-└─ README.md
-```
-
----
-
 ## Tests
 
 - gradient checks (finite differences for smooth parts)
