@@ -2,8 +2,8 @@
 
 This project implements and studies **first-order optimization methods with acceleration/momentum** on controlled test problems where you can see both:
 
-- the **clean, textbook behavior** (strongly convex quadratics), and
-- the **messier, real behavior** (weak convexity / non-strong convexity, and piecewise-defined objectives).
+- the **textbook behavior** (strongly convex quadratics), and
+- the **real behavior** (weak convexity / non-strong convexity, and piecewise-defined objectives).
 
 Core methods included:
 - **Gradient Descent (GD)** with classic fixed stepsizes
@@ -25,20 +25,6 @@ source .venv/bin/activate
 .venv\Scripts\Activate.ps1
 
 pip install -r requirements.txt
-```
-
----
-
-## Run
-
-### Notebook workflow
-```bash
-jupyter lab
-```
-
-### Script workflow (recommended if you refactor)
-```bash
-python scripts/run_all.py
 ```
 
 ---
@@ -185,7 +171,7 @@ f(y_k)-f_* \le \frac{2L\|x_0-x_*\|_2^2}{k(k+1)}.
 
 ---
 
-## Results (10 figures)
+## Results
 
 Figures are expected in **`figures/`**. The links below assume that directory layout.
 
@@ -239,8 +225,6 @@ Figures are expected in **`figures/`**. The links below assume that directory la
   <img src="figures/heavyball_block_structure.png" alt="Heavy-ball block structure" width="520" />
 </p>
 
-> Replace the filenames above with your actual outputs if they differ.
-
 ---
 
 ## Suggested repository layout
@@ -263,9 +247,7 @@ Figures are expected in **`figures/`**. The links below assume that directory la
 
 ---
 
-## Tests (optional but recommended)
-
-If you refactor into a package, a minimal test suite is worth it:
+## Tests
 
 - gradient checks (finite differences for smooth parts)
 - monotonicity/descent sanity checks (where expected)
@@ -279,4 +261,4 @@ pytest -q
 ---
 
 ## License
-MIT.
+MIT (see `LICENSE`).
